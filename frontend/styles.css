@@ -482,17 +482,25 @@ body {
 
 .recommendations-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
   gap: 20px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .recommendation-card {
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%);
   border: 2px solid rgba(16, 185, 129, 0.3);
   border-radius: 16px;
-  padding: 20px;
+  padding: 18px;
   position: relative;
   transition: all 0.3s;
+  min-width: 380px;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  word-wrap: break-word;
 }
 
 .recommendation-card:hover {
@@ -616,33 +624,47 @@ body {
 
 .task-metrics {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
   margin-bottom: 16px;
-  padding: 16px;
+  padding: 12px;
   background: rgba(0, 0, 0, 0.3);
   border-radius: 12px;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .metric-item {
   text-align: center;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 4px 2px;
+  box-sizing: border-box;
 }
 
 .metric-label {
   display: block;
-  font-size: 10px;
+  font-size: 9px;
   color: var(--text-muted);
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .metric-value {
   display: block;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .task-details-icons {
@@ -726,11 +748,20 @@ body {
 /* Responsive */
 @media (max-width: 1200px) {
   .recommendations-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   }
   
   .task-metrics {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+  
+  .metric-label {
+    font-size: 8px;
+  }
+  
+  .metric-value {
+    font-size: 14px;
   }
 }
 
@@ -744,7 +775,25 @@ body {
   }
   
   .task-metrics {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    padding: 10px;
+  }
+  
+  .metric-label {
+    font-size: 8px;
+  }
+  
+  .metric-value {
+    font-size: 13px;
+  }
+  
+  .recommendation-card {
+    min-width: 100%;
+  }
+  
+  .recommendations-grid {
+    grid-template-columns: 1fr;
   }
   
   .results-header {
