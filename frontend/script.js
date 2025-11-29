@@ -9,6 +9,7 @@ const bulkTextarea = document.getElementById("bulk-json");
 const loadBulkBtn = document.getElementById("load-bulk");
 const strategySelect = document.getElementById("strategy");
 const analyzeBtn = document.getElementById("analyze-btn");
+const top3Btn = document.getElementById("top3-btn");
 const clearAllBtn = document.getElementById("clear-all-btn");
 const feedbackEl = document.getElementById("feedback");
 const currentTasksList = document.getElementById("current-tasks-list");
@@ -193,14 +194,24 @@ analyzeBtn.addEventListener("click", async () => {
     setFeedback("Add at least one task before analyzing.", "error");
     return;
   }
-  await callAnalyze();
+  await callAnalyze(false);
 });
 
-async function callAnalyze() {
+top3Btn.addEventListener("click", () => {
+  if (analyzedTasks.length === 0) {
+    setFeedback("Please run analysis first to see top 3 recommendations.", "error");
+    return;
+  }
+  renderRecommendations(analyzedTasks.slice(0, 3));
+  setFeedback("Showing top 3 recommendations.", "success");
+});
+
+async function callAnalyze(showTop3Only = false) {
   const strategy = strategySelect.value;
 
   setFeedback("Analyzing tasks...", "loading");
   analyzeBtn.disabled = true;
+  top3Btn.disabled = true;
 
   try {
     const payload = {
@@ -221,8 +232,14 @@ async function callAnalyze() {
 
     const data = await res.json();
     analyzedTasks = data.tasks || [];
-    renderRecommendations(analyzedTasks.slice(0, 3));
-    setFeedback(`Analysis complete. Showing top 3 recommendations.`, "success");
+    
+    if (showTop3Only) {
+      renderRecommendations(analyzedTasks.slice(0, 3));
+      setFeedback(`Analysis complete. Showing top 3 recommendations.`, "success");
+    } else {
+      renderRecommendations(analyzedTasks);
+      setFeedback(`Analysis complete. Showing all ${analyzedTasks.length} task(s).`, "success");
+    }
   } catch (err) {
     console.error(err);
     const msg =
@@ -232,6 +249,7 @@ async function callAnalyze() {
     setFeedback(msg, "error");
   } finally {
     analyzeBtn.disabled = false;
+    top3Btn.disabled = false;
   }
 }
 
@@ -311,10 +329,13 @@ function renderRecommendations(recommendedTasks) {
     return;
   }
 
+  const isTop3 = recommendedTasks.length <= 3;
+  
   recommendationsContainer.innerHTML = recommendedTasks.map((task, index) => {
     const metrics = calculateMetrics(task);
     const priority = (task.priority_label || "Medium").toLowerCase();
     const priorityClass = priority === "high" ? "high" : priority === "low" ? "low" : "medium";
+    const position = index + 1;
     
     // Extract suggestion text from explanation
     const explanation = task.explanation || "";
@@ -348,7 +369,7 @@ function renderRecommendations(recommendedTasks) {
 
     return `
       <div class="recommendation-card priority-${priorityClass}">
-        <div class="recommendation-badge">#${index + 1}</div>
+        <div class="recommendation-badge">#${position}</div>
         <div class="recommendation-header">
           <h4>${task.title || "Untitled Task"}</h4>
           <span class="priority-badge priority-${priorityClass}">${task.priority_label || "Medium"} Priority</span>
@@ -359,7 +380,7 @@ function renderRecommendations(recommendedTasks) {
         </div>
         
         <p class="suggestion-text">
-          Suggestion #${index + 1}: ${suggestionText}
+          ${isTop3 ? `Suggestion #${position}: ` : `Rank #${position}: `}${suggestionText}
         </p>
         
         <div class="task-metrics">

@@ -396,6 +396,7 @@ body {
   gap: 12px;
   padding-top: 16px;
   border-top: 1px solid var(--border-color);
+  flex-wrap: wrap;
 }
 
 .action-btn {
@@ -415,6 +416,16 @@ body {
 }
 
 .action-btn.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.action-btn.accent {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white;
+}
+
+.action-btn.accent:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
 }
