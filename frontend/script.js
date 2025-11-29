@@ -1,5 +1,5 @@
-// API base URL - will be set from config.js
-const API_BASE = typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : "http://localhost:8000/api/tasks";
+// API base URL - updated for deployment
+const API_BASE = "https://task-analyzer-o2ek.onrender.com/api/tasks";
 
 const tasks = [];
 let nextAutoId = 1;
@@ -31,7 +31,6 @@ function setFeedback(message, type = "") {
   if (type) {
     feedbackEl.classList.add(type);
   }
-  // Auto-hide after 4 seconds
   if (message) {
     setTimeout(() => {
       feedbackEl.textContent = "";
@@ -42,10 +41,7 @@ function setFeedback(message, type = "") {
 
 function parseDependencies(text) {
   if (!text.trim()) return [];
-  return text
-    .split(",")
-    .map((d) => d.trim())
-    .filter(Boolean);
+  return text.split(",").map((d) => d.trim()).filter(Boolean);
 }
 
 function updateTaskCount() {
@@ -147,9 +143,7 @@ loadBulkBtn.addEventListener("click", () => {
     }
 
     arr.forEach((t) => {
-      if (!t.title) {
-        return;
-      }
+      if (!t.title) return;
       const id = t.id || `t${nextAutoId++}`;
       tasks.push({
         id,
@@ -233,7 +227,7 @@ async function callAnalyze(showTop3Only = false) {
 
     const data = await res.json();
     analyzedTasks = data.tasks || [];
-    
+
     if (showTop3Only) {
       renderRecommendations(analyzedTasks.slice(0, 3));
       setFeedback(`Analysis complete. Showing top 3 recommendations.`, "success");
@@ -245,7 +239,7 @@ async function callAnalyze(showTop3Only = false) {
     console.error(err);
     const msg =
       err instanceof TypeError
-        ? "Failed to reach backend. Make sure the Django server is running on http://localhost:8000"
+        ? "Failed to reach backend. Make sure the backend is deployed correctly."
         : err.message || "Unexpected error";
     setFeedback(msg, "error");
   } finally {
@@ -258,58 +252,30 @@ function formatDate(dateStr) {
   if (!dateStr) return "Not set";
   const date = new Date(dateStr);
   const today = new Date();
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  
-  if (date.toDateString() === today.toDateString()) {
-    return `${dateStr} (Due today)`;
-  } else if (date.toDateString() === tomorrow.toDateString()) {
-    return `${dateStr} (Due tomorrow)`;
-  }
+  const tomorrow = new Date();
+  tomorrow.setDate(today.getDate() + 1);
+
+  if (date.toDateString() === today.toDateString()) return `${dateStr} (Due today)`;
+  if (date.toDateString() === tomorrow.toDateString()) return `${dateStr} (Due tomorrow)`;
   return dateStr;
 }
 
 function calculateMetrics(task) {
-  // Extract scores from explanation or calculate from task data
   const score = task.score || 0;
-  
-  // Parse explanation to extract individual scores
   const explanation = task.explanation || "";
-  let urgency = 50;
-  let effort = 50;
-  let dependency = 10;
-  
-  // Try to extract urgency score from explanation
-  const urgencyMatch = explanation.match(/Urgency.*?score[:\s]+([\d.]+)/i);
-  if (urgencyMatch) {
-    urgency = parseFloat(urgencyMatch[1]) * 100;
-  } else if (task.due_date) {
-    const daysUntil = Math.ceil((new Date(task.due_date) - new Date()) / (1000 * 60 * 60 * 24));
-    if (daysUntil < 0) urgency = 100;
-    else if (daysUntil === 0) urgency = 95;
-    else if (daysUntil <= 3) urgency = 85;
-    else if (daysUntil <= 7) urgency = 70;
-    else urgency = 50;
-  }
-  
-  // Try to extract effort score
-  const effortMatch = explanation.match(/effort.*?score[:\s]+([\d.]+)/i);
-  if (effortMatch) {
-    effort = parseFloat(effortMatch[1]) * 100;
-  } else {
-    // Calculate based on hours
-    const hours = task.estimated_hours || 1;
-    effort = Math.max(10, Math.min(100, 100 - (hours * 10)));
-  }
-  
-  // Try to extract dependency score
+  let urgency = 50, effort = 50, dependency = 10;
+
+  const urgencyMatch = explanation.match(/Urgency.*?([\d.]+)/i);
+  if (urgencyMatch) urgency = parseFloat(urgencyMatch[1]) * 100;
+
+  const effortMatch = explanation.match(/effort.*?([\d.]+)/i);
+  if (effortMatch) effort = parseFloat(effortMatch[1]) * 100;
+
   const depMatch = explanation.match(/(\d+)\s+task\(s\)\s+depend/i);
-  if (depMatch) {
-    dependency = Math.min(100, 30 + (parseInt(depMatch[1]) * 20));
-  }
-  
+  if (depMatch) dependency = Math.min(100, 30 + (parseInt(depMatch[1]) * 20));
+
   const importance = (task.importance / 10) * 100;
-  
+
   return {
     overall: (score * 100).toFixed(1),
     urgency: urgency.toFixed(1),
@@ -331,102 +297,67 @@ function renderRecommendations(recommendedTasks) {
   }
 
   const isTop3 = recommendedTasks.length <= 3;
-  
+
   recommendationsContainer.innerHTML = recommendedTasks.map((task, index) => {
     const metrics = calculateMetrics(task);
     const priority = (task.priority_label || "Medium").toLowerCase();
-    const priorityClass = priority === "high" ? "high" : priority === "low" ? "low" : "medium";
+    const priorityClass =
+      priority === "high" ? "high" : priority === "low" ? "low" : "medium";
     const position = index + 1;
-    
-    // Extract suggestion text from explanation
+
     const explanation = task.explanation || "";
-    let suggestionText = "Recommended based on balanced factors.";
-    
-    // Try to extract key reasons from explanation
-    const reasons = [];
-    if (explanation.includes("Overdue") || explanation.includes("due today")) {
+    let reasons = [];
+
+    if (explanation.includes("Overdue") || explanation.includes("due today"))
       reasons.push("urgent deadline");
-    }
-    if (explanation.includes("Due in")) {
-      const daysMatch = explanation.match(/Due in (\d+)d/);
-      if (daysMatch) {
-        const days = parseInt(daysMatch[1]);
-        if (days <= 3) reasons.push(`due in ${days} day(s)`);
-      }
-    }
-    if (explanation.includes("quick win") || explanation.includes("low-effort")) {
+
+    const daysMatch = explanation.match(/Due in (\d+)d/);
+    if (daysMatch && parseInt(daysMatch[1]) <= 3)
+      reasons.push(`due in ${daysMatch[1]} day(s)`);
+
+    if (explanation.includes("quick win") || explanation.includes("low-effort"))
       reasons.push("short task");
-    }
-    if (explanation.includes("high importance") || task.importance >= 8) {
+
+    if (task.importance >= 8)
       reasons.push("high importance");
-    }
-    if (explanation.includes("depend on this")) {
-      reasons.push("blocks other tasks");
-    }
-    
-    if (reasons.length > 0) {
-      suggestionText = `Recommended based on balanced factors. Priority due to: ${reasons.join(", ")}.`;
-    }
+
+    const suggestionText =
+      reasons.length > 0
+        ? `Recommended based on: ${reasons.join(", ")}.`
+        : "Recommended based on balanced factors.";
 
     return `
       <div class="recommendation-card priority-${priorityClass}">
         <div class="recommendation-badge">#${position}</div>
         <div class="recommendation-header">
           <h4>${task.title || "Untitled Task"}</h4>
-          <span class="priority-badge priority-${priorityClass}">${task.priority_label || "Medium"} Priority</span>
+          <span class="priority-badge priority-${priorityClass}">
+            ${task.priority_label || "Medium"} Priority
+          </span>
         </div>
         
-        <div class="priority-score">
-          Priority Score: <strong>${metrics.overall}</strong>
-        </div>
-        
-        <p class="suggestion-text">
-          ${isTop3 ? `Suggestion #${position}: ` : `Rank #${position}: `}${suggestionText}
-        </p>
-        
+        <div class="priority-score">Priority Score: <strong>${metrics.overall}</strong></div>
+
+        <p class="suggestion-text">${suggestionText}</p>
+
         <div class="task-metrics">
-          <div class="metric-item">
-            <span class="metric-label">OVERALL:</span>
-            <span class="metric-value">${metrics.overall}</span>
-          </div>
-          <div class="metric-item">
-            <span class="metric-label">URGENCY:</span>
-            <span class="metric-value">${metrics.urgency}</span>
-          </div>
-          <div class="metric-item">
-            <span class="metric-label">IMPORTANCE:</span>
-            <span class="metric-value">${metrics.importance}</span>
-          </div>
-          <div class="metric-item">
-            <span class="metric-label">EFFORT:</span>
-            <span class="metric-value">${metrics.effort}</span>
-          </div>
-          <div class="metric-item">
-            <span class="metric-label">DEPENDENCY:</span>
-            <span class="metric-value">${metrics.dependency}</span>
-          </div>
+          <div class="metric-item"><span>OVERALL:</span> ${metrics.overall}</div>
+          <div class="metric-item"><span>URGENCY:</span> ${metrics.urgency}</div>
+          <div class="metric-item"><span>IMPORTANCE:</span> ${metrics.importance}</div>
+          <div class="metric-item"><span>EFFORT:</span> ${metrics.effort}</div>
+          <div class="metric-item"><span>DEPENDENCY:</span> ${metrics.dependency}</div>
         </div>
-        
+
         <div class="task-details-icons">
-          <div class="detail-item">
-            <span class="icon">📅</span>
-            <span>Due: ${formatDate(task.due_date)}</span>
-          </div>
-          <div class="detail-item">
-            <span class="icon">⏱️</span>
-            <span>Effort: ${task.estimated_hours || 0} hour(s)</span>
-          </div>
-          <div class="detail-item">
-            <span class="icon">⭐</span>
-            <span>Importance: ${task.importance || 5}/10</span>
-          </div>
+          <div class="detail-item"><span class="icon">📅</span> Due: ${formatDate(task.due_date)}</div>
+          <div class="detail-item"><span class="icon">⏱️</span> Effort: ${task.estimated_hours} hour(s)</div>
+          <div class="detail-item"><span class="icon">⭐</span> Importance: ${task.importance}/10</div>
         </div>
       </div>
     `;
   }).join("");
 }
 
-// Initialize
 updateTaskCount();
 renderCurrentTasks();
 strategyDescEl.textContent = strategyDescriptions[strategySelect.value];
