@@ -1,13 +1,30 @@
 from pathlib import Path
+import os
 
+# ------------------------------------------------------------
+# BASE PATH
+# ------------------------------------------------------------
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = "replace-this-with-a-random-secret-key-for-local-dev"
 
-DEBUG = True
+# ------------------------------------------------------------
+# SECURITY SETTINGS
+# ------------------------------------------------------------
+SECRET_KEY = os.environ.get(
+    "SECRET_KEY",
+    "dev-secret-key-change-in-production"
+)
 
-ALLOWED_HOSTS = ["*"]
+# DEBUG defaults to False in production
+DEBUG = os.environ.get("DEBUG", "False") == "True"
 
+# Allow all hosts unless overridden by env var
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "*").split(",")
+
+
+# ------------------------------------------------------------
+# APPLICATIONS
+# ------------------------------------------------------------
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -15,14 +32,28 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+
+    # Third-party
     "rest_framework",
     "corsheaders",
+
+    # Local apps
     "tasks",
 ]
 
+
+# ------------------------------------------------------------
+# MIDDLEWARE
+# ------------------------------------------------------------
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+
+    # Whitenoise for static files in production
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+
+    # CORS
     "corsheaders.middleware.CorsMiddleware",
+
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -31,12 +62,21 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "task_analyzer.urls"
 
+# ------------------------------------------------------------
+# URL & WSGI
+# ------------------------------------------------------------
+ROOT_URLCONF = "task_analyzer.urls"
+WSGI_APPLICATION = "task_analyzer.wsgi.application"
+
+
+# ------------------------------------------------------------
+# TEMPLATES
+# ------------------------------------------------------------
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [],  # You can add templates folder here if needed
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -49,8 +89,10 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "task_analyzer.wsgi.application"
 
+# ------------------------------------------------------------
+# DATABASE
+# ------------------------------------------------------------
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
@@ -58,22 +100,52 @@ DATABASES = {
     }
 }
 
+
+# ------------------------------------------------------------
+# PASSWORD VALIDATION
+# ------------------------------------------------------------
 AUTH_PASSWORD_VALIDATORS = []
 
+
+# ------------------------------------------------------------
+# INTERNATIONALIZATION
+# ------------------------------------------------------------
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = "static/"
 
+# ------------------------------------------------------------
+# STATIC FILES (STATIC + WHITENOISE)
+# ------------------------------------------------------------
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Optional, but recommended for performance:
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+
+# ------------------------------------------------------------
+# DEFAULT PRIMARY KEY FIELD TYPE
+# ------------------------------------------------------------
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+
+# ------------------------------------------------------------
+# REST FRAMEWORK
+# ------------------------------------------------------------
 REST_FRAMEWORK = {
-    "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
-    "DEFAULT_PARSER_CLASSES": ["rest_framework.parsers.JSONParser"],
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer"
+    ],
+    "DEFAULT_PARSER_CLASSES": [
+        "rest_framework.parsers.JSONParser"
+    ],
 }
 
-# Allow CORS for local frontend (including file:// origin -> Origin: null)
-CORS_ALLOW_ALL_ORIGINS = True
 
+# ------------------------------------------------------------
+# CORS (allows frontend → backend requests)
+# ------------------------------------------------------------
+CORS_ALLOW_ALL_ORIGINS = True

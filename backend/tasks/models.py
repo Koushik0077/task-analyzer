@@ -19,3 +19,4 @@ class Task(models.Model):
         return self.title or f"Task {self.pk}"
 
 
+

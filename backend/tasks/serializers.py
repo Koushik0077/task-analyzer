@@ -52,3 +52,4 @@ class SuggestResponseSerializer(serializers.Serializer):
     tasks = AnalyzedTaskSerializer(many=True)
 
 
+

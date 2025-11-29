@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: task-analyzer-backend
+    runtime: python
+    region: singapore
+    plan: free
+    buildCommand: "pip install -r backend/requirements.txt"
+    startCommand: "cd backend && gunicorn task_analyzer.wsgi:application --bind 0.0.0.0:$PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10

@@ -1,4 +1,5 @@
-const API_BASE = "http://localhost:8000/api/tasks";
+// API base URL - will be set from config.js
+const API_BASE = typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : "http://localhost:8000/api/tasks";
 
 const tasks = [];
 let nextAutoId = 1;
