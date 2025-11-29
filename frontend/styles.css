@@ -624,24 +624,36 @@ body {
 
 .task-metrics {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
   margin-bottom: 16px;
   padding: 12px;
   background: rgba(0, 0, 0, 0.3);
   border-radius: 12px;
   width: 100%;
   box-sizing: border-box;
-  overflow: hidden;
 }
 
 .metric-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
-  min-width: 0;
-  max-width: 100%;
-  overflow: hidden;
-  padding: 4px 2px;
-  box-sizing: border-box;
+  word-break: break-word;
+}
+
+.metric-item span {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.metric-item {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
 }
 
 .metric-label {
