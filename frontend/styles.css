@@ -644,14 +644,14 @@ body {
 
 .metric-item span {
   display: block;
-  font-size: 10px;
+  font-size: 7px;
   font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
 }
 
 .metric-item {
-  font-size: 14px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--text-primary);
 }
